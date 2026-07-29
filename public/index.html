@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alibi</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ════════════════════════════════
+       ACCUEIL
+  ════════════════════════════════ -->
+  <div class="screen active" id="s-home">
+    <div class="col g24" style="padding-top:40px">
+      <div class="col g8">
+        <span class="logo">Alibi</span>
+        <h1 class="display">Le jeu<br>des alibis.</h1>
+        <p class="body">Construisez un alibi solide.<br>Résistez aux questions. Démasquez les imposteurs.</p>
+      </div>
+      <div class="col g8">
+        <button class="btn btn-p" id="btn-create">Créer un groupe</button>
+        <button class="btn btn-g" id="btn-join-toggle">Rejoindre un groupe</button>
+      </div>
+      <div class="col g8" id="join-form" style="display:none">
+        <input class="inp" id="join-code" placeholder="Code du groupe (ex: AB12CD)" maxlength="6" style="text-transform:uppercase;letter-spacing:.1em;text-align:center;font-size:1.1rem">
+        <button class="btn btn-s" id="btn-join-confirm">Rejoindre</button>
+      </div>
+      <div class="err" id="home-err"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SAISIE DU PSEUDO
+  ════════════════════════════════ -->
+  <div class="screen" id="s-name">
+    <div class="col g20">
+      <div class="col g4">
+        <span class="label" id="name-label">Créer un groupe</span>
+        <h2 class="title">Votre pseudo</h2>
+      </div>
+      <div class="col g8">
+        <input class="inp" id="name-inp" placeholder="Entrez votre pseudo…" maxlength="20">
+        <div class="err" id="name-err"></div>
+        <button class="btn btn-p" id="btn-name-confirm">Continuer</button>
+      </div>
+      <button class="btn btn-g" onclick="go('s-home')">Retour</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       LOBBY
+  ════════════════════════════════ -->
+  <div class="screen" id="s-lobby">
+    <div class="col g20">
+      <div class="col g8">
+        <span class="label">Groupe</span>
+        <h2 class="title">En attente des joueurs</h2>
+      </div>
+
+      <!-- Code du groupe -->
+      <div class="card col g8">
+        <span class="label">Code du groupe</span>
+        <div class="link-box">
+          <div class="link-code" id="lobby-code">——</div>
+          <button class="btn btn-s btn-sm" id="btn-copy-code">Copier</button>
+        </div>
+        <p class="body" style="font-size:.78rem">Partagez ce code aux autres joueurs pour qu'ils rejoignent.</p>
+      </div>
+
+      <!-- Liste des joueurs -->
+      <div class="card col g10">
+        <div class="row between">
+          <span class="label">Joueurs connectés</span>
+          <span class="badge b-muted" id="lobby-count">0 joueur</span>
+        </div>
+        <div class="col g6" id="lobby-players"></div>
+      </div>
+
+      <!-- Config (chef uniquement) -->
+      <div class="col g16" id="host-config" style="display:none">
+        <div class="card col g12">
+          <span class="label">Mode de jeu</span>
+          <div class="col g8">
+            <div class="mode-card" id="mc-odd" onclick="selectMode('odd')">
+              <div class="mode-title">Mode impair</div>
+              <div class="mode-desc">3 ou 5 joueurs · 1 MJ · 1 ou 2 équipes de 2</div>
+            </div>
+            <div class="mode-card" id="mc-even" onclick="selectMode('even')">
+              <div class="mode-title">Mode pair</div>
+              <div class="mode-desc">4 ou 6 joueurs · 2 MJ · 1 ou 2 équipes de 2</div>
+            </div>
+          </div>
+        </div>
+        <div class="card col g10">
+          <span class="label">Nombre de manches <span style="color:var(--text)">(2–14)</span></span>
+          <div class="stepper">
+            <button class="stepper-btn" id="btn-rounds-minus">−</button>
+            <div class="stepper-val" id="rounds-val">6</div>
+            <button class="stepper-btn" id="btn-rounds-plus">+</button>
+          </div>
+          <p class="body" style="font-size:.78rem;text-align:center" id="rounds-hint"></p>
+        </div>
+        <div class="err" id="lobby-err"></div>
+        <button class="btn btn-p" id="btn-start-assign" disabled>Assigner les rôles →</button>
+      </div>
+
+      <!-- Attente (non-chef) -->
+      <div class="info-box" id="guest-wait" style="display:none">
+        ⏳ En attente du chef du groupe…
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ASSIGNATION (chef)
+  ════════════════════════════════ -->
+  <div class="screen" id="s-assign">
+    <div class="col g20">
+      <div class="col g4">
+        <span class="label">Chef du groupe</span>
+        <h2 class="title">Assignez les rôles</h2>
+        <p class="body" id="assign-hint"></p>
+      </div>
+      <div class="card col g10">
+        <span class="label" id="assign-mj-label">Maître du jeu</span>
+        <div class="col g6" id="mj-pills"></div>
+      </div>
+      <div class="card col g10">
+        <span class="label">Équipe A</span>
+        <div class="col g6" id="ta-pills"></div>
+      </div>
+      <div class="card col g10" id="tb-section" style="display:none">
+        <span class="label">Équipe B</span>
+        <div class="col g6" id="tb-pills"></div>
+      </div>
+      <div class="err" id="assign-err"></div>
+      <button class="btn btn-p" id="btn-assign-confirm" disabled>Lancer la lecture des alibis →</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ATTENTE (joueurs pendant assignation)
+  ════════════════════════════════ -->
+  <div class="screen" id="s-wait">
+    <div class="col g20" style="text-align:center;padding-top:60px">
+      <span class="logo">Alibi</span>
+      <div class="info-box mt24">
+        ⏳ Le chef du groupe configure la partie…
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       LECTURE ALIBI (joueurs équipe)
+  ════════════════════════════════ -->
+  <div class="screen" id="s-alibi">
+    <div class="col g20">
+      <div class="row between" style="align-items:flex-start">
+        <div class="col g4">
+          <span class="label">Votre alibi</span>
+          <h2 class="title" id="alibi-team-lbl">Équipe A</h2>
+          <p class="body" style="font-size:.78rem;margin-top:4px">Mémorisez chaque détail.</p>
+        </div>
+        <div class="timer-wrap">
+          <svg class="t-svg" viewBox="0 0 110 110">
+            <circle class="t-track" cx="55" cy="55" r="47"/>
+            <circle class="t-arc" id="alibi-arc" cx="55" cy="55" r="47"/>
+          </svg>
+          <div class="t-num" id="alibi-cd">60</div>
+        </div>
+      </div>
+      <div class="card" style="line-height:1.75;font-size:.9rem" id="alibi-text"></div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ATTENTE ALIBI (MJ)
+  ════════════════════════════════ -->
+  <div class="screen" id="s-alibi-mj">
+    <div class="col g20" style="text-align:center;padding-top:60px">
+      <span class="logo">Alibi</span>
+      <div class="timer-wrap" style="margin:24px auto">
+        <svg class="t-svg" viewBox="0 0 110 110">
+          <circle class="t-track" cx="55" cy="55" r="47"/>
+          <circle class="t-arc" id="alibi-mj-arc" cx="55" cy="55" r="47"/>
+        </svg>
+        <div class="t-num" id="alibi-mj-cd">60</div>
+      </div>
+      <p class="body">Les équipes lisent leurs alibis…<br>La partie commence dans un instant.</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       ATTENTE DÉBUT DE MANCHE (joueurs)
+  ════════════════════════════════ -->
+  <div class="screen" id="s-round-wait">
+    <div class="col g20" style="text-align:center;padding-top:60px">
+      <span class="logo">Alibi</span>
+      <div class="info-box mt24" id="round-wait-msg">
+        En attente du MJ…
+      </div>
+      <div class="score-pair mt16">
+        <div class="score-c"><div class="score-n" id="rw-sa">0</div><div class="score-l">Équipe A</div></div>
+        <div class="score-c"><div class="score-n" id="rw-sb">0</div><div class="score-l">Équipe B</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       MJ — MODE IMPAIR
+  ════════════════════════════════ -->
+  <div class="screen" id="s-mj-odd">
+    <div class="col g16">
+      <div class="row between">
+        <div class="col g4">
+          <span class="label">Maître du jeu</span>
+          <h2 class="title" style="font-size:1.1rem" id="mj-odd-round">Manche 1 / 6</h2>
+        </div>
+        <div class="score-pair" style="width:140px">
+          <div class="score-c"><div class="score-n" id="mj-odd-sa">0</div><div class="score-l">Éq. A</div></div>
+          <div class="score-c"><div class="score-n" id="mj-odd-sb">0</div><div class="score-l">Éq. B</div></div>
+        </div>
+      </div>
+      <div class="card col g10">
+        <span class="label" id="mj-odd-team-lbl">Équipe A joue</span>
+        <div class="q-bubble" id="mj-odd-q">—</div>
+      </div>
+      <!-- Réponses (après timer) -->
+      <div class="col g12" id="mj-odd-answers" style="display:none">
+        <span class="label">Réponses reçues</span>
+        <div class="col g8" id="mj-odd-ans-list"></div>
+        <div class="div" style="margin-top:8px"></div>
+        <div class="col g8 mt8">
+          <button class="btn btn-ok" id="btn-award-yes">✓ Les réponses concordent — +1 point</button>
+          <button class="btn btn-no" id="btn-award-no">Passer sans point</button>
+        </div>
+      </div>
+      <button class="btn btn-p" id="btn-mj-odd-launch">Lancer la question</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       JOUEUR ACTIF — MODE IMPAIR
+  ════════════════════════════════ -->
+  <div class="screen" id="s-player-active">
+    <div class="col g16">
+      <div class="row between" style="align-items:flex-start">
+        <div class="col g8" style="flex:1;padding-right:12px;padding-top:4px">
+          <span class="badge b-amber" id="pl-active-badge">Équipe A</span>
+          <div class="q-bubble mt8" id="pl-active-q">—</div>
+        </div>
+        <div class="timer-wrap">
+          <svg class="t-svg" viewBox="0 0 110 110">
+            <circle class="t-track" cx="55" cy="55" r="47"/>
+            <circle class="t-arc" id="pl-active-arc" cx="55" cy="55" r="47"/>
+          </svg>
+          <div class="t-num" id="pl-active-cd">30</div>
+        </div>
+      </div>
+      <div class="col g8" id="pl-active-input">
+        <span class="label">Votre réponse</span>
+        <textarea class="inp" id="pl-active-ans" rows="4" placeholder="Tapez votre réponse…"></textarea>
+        <button class="btn btn-p" id="btn-pl-submit">Valider ma réponse</button>
+      </div>
+      <div class="info-box" id="pl-active-sent" style="display:none">
+        ✅ Réponse envoyée — en attente du MJ…
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       JOUEUR SPECTATEUR — MODE IMPAIR
+  ════════════════════════════════ -->
+  <div class="screen" id="s-player-watch">
+    <div class="col g16" style="text-align:center;padding-top:40px">
+      <span class="label" id="pl-watch-label">Équipe A joue</span>
+      <div class="card mt12">
+        <div class="q-bubble" id="pl-watch-q" style="text-align:left">—</div>
+      </div>
+      <p class="body mt12">Vous observez — attendez votre tour.</p>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       MJ — MODE PAIR
+  ════════════════════════════════ -->
+  <div class="screen" id="s-mj-even">
+    <div class="col g16">
+      <div class="row between">
+        <div class="col g4">
+          <span class="label" id="mj-even-who">MJ 1</span>
+          <h2 class="title" style="font-size:1.1rem" id="mj-even-round">Manche 1 / 6</h2>
+        </div>
+        <div class="score-pair" style="width:140px">
+          <div class="score-c"><div class="score-n" id="mj-even-sa">0</div><div class="score-l">Éq. A</div></div>
+          <div class="score-c"><div class="score-n" id="mj-even-sb">0</div><div class="score-l">Éq. B</div></div>
+        </div>
+      </div>
+      <div class="card col g10">
+        <span class="label" id="mj-even-team-lbl">Équipe A interrogée</span>
+        <div class="q-bubble" id="mj-even-q">—</div>
+      </div>
+      <!-- Saisie réponse -->
+      <div class="card col g10" id="mj-even-saisie">
+        <span class="label" id="mj-even-player-lbl">Posez la question à voix haute à Alice</span>
+        <p class="body" style="font-size:.78rem">Puis saisissez sa réponse ci-dessous.</p>
+        <div class="row g8 mt8">
+          <div class="timer-wrap sm">
+            <svg class="t-svg" viewBox="0 0 110 110">
+              <circle class="t-track" cx="55" cy="55" r="47"/>
+              <circle class="t-arc" id="mj-even-arc" cx="55" cy="55" r="47"/>
+            </svg>
+            <div class="t-num" id="mj-even-cd">60</div>
+          </div>
+          <div class="col g8" style="flex:1">
+            <textarea class="inp" id="mj-even-inp" rows="3" placeholder="Réponse du joueur…"></textarea>
+            <button class="btn btn-p btn-sm" id="btn-mj-even-submit">Valider</button>
+          </div>
+        </div>
+        <div class="info-box" id="mj-even-sent" style="display:none">
+          ✅ Réponse enregistrée — en attente de l'autre MJ…
+        </div>
+      </div>
+      <!-- Validation croisée -->
+      <div class="col g12" id="mj-even-validation" style="display:none">
+        <span class="label">Validation croisée</span>
+        <p class="body" style="font-size:.8rem">Comparez avec la réponse de l'autre MJ.</p>
+        <div class="card col g8 mt4">
+          <span class="label" id="mj-even-other-lbl">Réponse de l'autre MJ</span>
+          <div class="ans-box" id="mj-even-other-ans">—</div>
+        </div>
+        <div class="col g8 mt8" id="mj-even-val-btns">
+          <button class="btn btn-ok" id="btn-mj-val-ok">✓ Les réponses concordent</button>
+          <button class="btn btn-no" id="btn-mj-val-no">✗ Ne concordent pas</button>
+        </div>
+        <div class="info-box" id="mj-even-wait-partner" style="display:none">
+          En attente de la validation de l'autre MJ…
+        </div>
+      </div>
+      <button class="btn btn-p" id="btn-mj-even-launch">Lancer la question</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       JOUEUR ACTIF — MODE PAIR (attend que le MJ pose la question)
+  ════════════════════════════════ -->
+  <div class="screen" id="s-player-even-wait">
+    <div class="col g20" style="text-align:center;padding-top:60px">
+      <span class="logo">Alibi</span>
+      <div class="info-box mt24" id="pl-even-wait-msg">
+        🎙️ Le MJ va vous poser une question à voix haute…<br>Préparez-vous à répondre !
+      </div>
+      <div class="score-pair mt16">
+        <div class="score-c"><div class="score-n" id="pe-sa">0</div><div class="score-l">Équipe A</div></div>
+        <div class="score-c"><div class="score-n" id="pe-sb">0</div><div class="score-l">Équipe B</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       FIN DE PARTIE
+  ════════════════════════════════ -->
+  <div class="screen" id="s-end">
+    <div class="col g28" style="text-align:center;gap:28px;padding-top:40px">
+      <div class="col g12 center">
+        <span class="logo">Alibi</span>
+        <h1 class="display glow mt12" id="end-winner">Équipe A gagne !</h1>
+        <p class="body" id="end-score">5 – 3</p>
+      </div>
+      <div class="score-pair">
+        <div class="score-c"><div class="score-n" id="end-sa">0</div><div class="score-l">Équipe A</div></div>
+        <div class="score-c"><div class="score-n" id="end-sb">0</div><div class="score-l">Équipe B</div></div>
+      </div>
+      <div class="col g8">
+        <button class="btn btn-p" id="btn-replay">Rejouer</button>
+        <button class="btn btn-g" onclick="location.reload()">Accueil</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<!-- Result overlay (vert/rouge) -->
+<div id="result-overlay" style="display:none"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/timer.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>
